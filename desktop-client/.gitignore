@@ -2,3 +2,29 @@ release/
 dist/
 dist-electron/
 .ytb-build-counter.json
+
+# 依赖与包管理（勿提交；此前曾误提交 node_modules）
+node_modules/
+.npm/
+.pnpm-store/
+.yarn/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# 本地环境（密钥勿入库）
+.env
+.env.*
+!.env.example
+
+# 测试与覆盖率
+coverage/
+.nyc_output/
+
+# 编辑器
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
