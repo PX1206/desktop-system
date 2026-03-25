@@ -4,6 +4,12 @@
 
 ---
 
+## 桌面端
+<img width="1455" height="880" alt="image" src="https://github.com/user-attachments/assets/4b4a30c4-0378-4cae-a66c-6b23023c618b" />
+
+## 管理端
+<img width="1920" height="930" alt="image" src="https://github.com/user-attachments/assets/195dd4a5-fd12-47c4-9100-3d46adb486ef" />
+
 ## 技术栈概览
 
 | 模块 | 技术 |
