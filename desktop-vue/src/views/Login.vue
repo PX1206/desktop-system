@@ -103,10 +103,15 @@
             {{ loading ? '登录中…' : '登录' }}
           </button>
           <p v-if="error" class="error">{{ error }}</p>
-          <div class="register-link">
-            <button type="button" class="link-register" @click="openRegister">
-              注册
-            </button>
+          <div class="footer-links">
+            <div class="footer-left">
+              <DesktopClientDownloadLink variant="login-footer" />
+            </div>
+            <div class="register-link">
+              <button type="button" class="link-register" @click="openRegister">
+                注册
+              </button>
+            </div>
           </div>
         </div>
       </form>
@@ -197,6 +202,7 @@ import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { login, smsLogin, register } from '../api/user'
 import { getCaptcha, getSmsCode } from '../api/sms'
+import DesktopClientDownloadLink from '../components/DesktopClientDownloadLink.vue'
 
 const router = useRouter()
 const loginMode = ref<'account' | 'sms'>('account')
@@ -639,8 +645,24 @@ onUnmounted(() => {
   line-height: 1.4;
 }
 
-.register-link {
+.footer-links {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
   margin-top: 10px;
+  gap: 12px;
+}
+
+.footer-left {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
+.register-link {
+  flex-shrink: 0;
+  margin-top: 0;
   text-align: right;
   font-size: 0.95rem;
 }

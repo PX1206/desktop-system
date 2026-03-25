@@ -3,6 +3,7 @@ package com.desktop.system.service;
 import com.desktop.common.pagination.Paging;
 import com.desktop.system.param.InstallPackagePageParam;
 import com.desktop.system.vo.InstallPackageVO;
+import com.desktop.system.vo.OpenInstallPackageLatestVO;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
@@ -24,4 +25,9 @@ public interface InstallPackageService {
      * 输出 electron-updater（generic）所需的 latest.yml，取最新一条 Windows .exe 且能解析出语义化版本的记录。
      */
     void writeElectronLatestYml(HttpServletResponse response) throws Exception;
+
+    /**
+     * 与 {@link #writeElectronLatestYml} 相同的选取规则；物理文件须存在。无可用包或文件缺失时返回 null。
+     */
+    OpenInstallPackageLatestVO getLatestWindowsPublicInfo();
 }

@@ -12,6 +12,7 @@ import com.desktop.system.mapper.InstallPackageMapper;
 import com.desktop.system.param.InstallPackagePageParam;
 import com.desktop.system.service.InstallPackageService;
 import com.desktop.system.vo.InstallPackageVO;
+import com.desktop.system.vo.OpenInstallPackageLatestVO;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -317,8 +318,20 @@ public class InstallPackageServiceImpl implements InstallPackageService {
         return DateTimeFormatter.ISO_INSTANT.format(i);
     }
 
-    @Override
-    public void writeElectronLatestYml(HttpServletResponse response) throws Exception {
+    private static final class LatestWindowsPick {
+        final InstallPackage pkg;
+        final String semver;
+
+        LatestWindowsPick(InstallPackage pkg, String semver) {
+            this.pkg = pkg;
+            this.semver = semver;
+        }
+    }
+
+    /**
+     * 与 electron generic latest.yml 一致：未删除的 .exe 中，按语义化版本取最大；无可用 semver 时返回 null。
+     */
+    private LatestWindowsPick pickLatestWindowsExe() {
         List<InstallPackage> list = installPackageMapper.selectList(new LambdaQueryWrapper<InstallPackage>()
                 .eq(InstallPackage::getDelFlag, false)
                 .eq(InstallPackage::getSuffix, ".exe"));
@@ -334,8 +347,40 @@ public class InstallPackageServiceImpl implements InstallPackageService {
                 bestVer = v;
             }
         }
-        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         if (best == null) {
+            return null;
+        }
+        return new LatestWindowsPick(best, bestVer);
+    }
+
+    @Override
+    public OpenInstallPackageLatestVO getLatestWindowsPublicInfo() {
+        LatestWindowsPick pick = pickLatestWindowsExe();
+        if (pick == null) {
+            return null;
+        }
+        File file = new File(LOCAL_PACKAGE_PATH + pick.pkg.getRelativePath() + "/" + pick.pkg.getDownloadCode() + pick.pkg.getSuffix());
+        if (!file.isFile()) {
+            log.warn("最新桌面安装包记录存在但物理文件缺失: {}", file.getAbsolutePath());
+            return null;
+        }
+        long size = file.length();
+        if (pick.pkg.getFileSize() != null && pick.pkg.getFileSize() > 0) {
+            size = pick.pkg.getFileSize();
+        }
+        return new OpenInstallPackageLatestVO()
+                .setVersion(pick.semver)
+                .setVersionLabel(pick.pkg.getVersionLabel())
+                .setFileName(pick.pkg.getFileName())
+                .setDownloadCode(pick.pkg.getDownloadCode())
+                .setFileSize(size);
+    }
+
+    @Override
+    public void writeElectronLatestYml(HttpServletResponse response) throws Exception {
+        LatestWindowsPick pick = pickLatestWindowsExe();
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        if (pick == null) {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             response.setContentType("text/plain;charset=UTF-8");
             try (Writer w = new OutputStreamWriter(response.getOutputStream(), StandardCharsets.UTF_8)) {
@@ -343,6 +388,8 @@ public class InstallPackageServiceImpl implements InstallPackageService {
             }
             return;
         }
+        InstallPackage best = pick.pkg;
+        String bestVer = pick.semver;
         File file = new File(LOCAL_PACKAGE_PATH + best.getRelativePath() + "/" + best.getDownloadCode() + best.getSuffix());
         if (!file.isFile()) {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);

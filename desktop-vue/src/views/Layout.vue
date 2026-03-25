@@ -34,6 +34,7 @@
           {{ sidebarCollapsed ? '☰' : '◀' }}
         </button>
         <span class="title">{{ currentTitle }}</span>
+        <DesktopClientDownloadLink variant="header" class="header-desktop-dl" />
         <div ref="userMenuRef" class="user-area">
           <button type="button" class="user-trigger" @click.stop="userMenuOpen = !userMenuOpen">
             {{ userInfo?.nickname || userInfo?.username || '用户' }}
@@ -118,6 +119,7 @@ import { getUserMenuTree, type MenuItem } from '../api/menu'
 import ChangePasswordModal from '../components/ChangePasswordModal.vue'
 import BirthdayPicker from '../components/BirthdayPicker.vue'
 import ProfileAvatarUpload from '../components/ProfileAvatarUpload.vue'
+import DesktopClientDownloadLink from '../components/DesktopClientDownloadLink.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -354,7 +356,10 @@ onUnmounted(() => {
   font-size: 1rem;
 }
 .collapse-btn:hover { color: #fff; }
-.title { flex: 1; font-weight: 500; }
+.title { flex: 1; font-weight: 500; min-width: 0; }
+.header-desktop-dl {
+  flex-shrink: 0;
+}
 .user-area {
   position: relative;
   display: flex;
