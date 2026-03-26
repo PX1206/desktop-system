@@ -1,6 +1,6 @@
 {
   "name": "desktop-sync-client",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "云同步桌面同步客户端",
   "author": "desktop-system",
   "main": "dist-electron/main.js",

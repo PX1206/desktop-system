@@ -1,6 +1,7 @@
 /**
  * 文件同步监听 - 运行在 Electron 主进程
- * 逻辑：登录后获取同步目录 → 与服务器 diff（只上传缺失/更新的）→ 持续监控，变动及时同步
+ * 逻辑：登录后获取同步目录 → 与服务器 diff（只上传缺失/更新的）→ 持续监控，变动及时同步；
+ * 另按固定间隔做全量 diff，便于云端被删后本地未改动的文件仍能在一段时间内补传。
  * 说明：不会根据「本地缺文件」删除服务端文件；仅上传方向。拉取需用户点「从云端拉取」。
  */
 import chokidar from 'chokidar'
@@ -24,6 +25,12 @@ let token = ''
 let baseUrl = 'http://192.168.31.73:6168'
 let uploadQueue: Array<{ dirId: number; localPath: string; filePath: string }> = []
 let processing = false
+/** 当前 sync:start 生效的目录，供定时全量 diff 使用 */
+let activeSyncDirs: Array<{ id: number; localPath: string }> = []
+let fullDiffTimer: ReturnType<typeof setInterval> | undefined
+
+/** 定时全量与服务端 diff，捕获「云端已删、本地未触发变更」的补传场景 */
+const FULL_DIFF_INTERVAL_MS = 60 * 60 * 1000
 
 function getRelativePath(dirPath: string, filePath: string): string {
   const rel = path.relative(dirPath, filePath)
@@ -164,6 +171,23 @@ function onFileEvent(dirId: number, localPath: string, filePath: string) {
   processQueue()
 }
 
+function clearFullDiffTimer() {
+  if (fullDiffTimer) {
+    clearInterval(fullDiffTimer)
+    fullDiffTimer = undefined
+  }
+}
+
+async function runScheduledFullDiff() {
+  if (!token || !activeSyncDirs.length) return
+  for (const dir of activeSyncDirs) {
+    if (!dir.localPath || !fs.existsSync(dir.localPath)) continue
+    const serverMap = await fetchServerFileList(dir.id)
+    queueAllFilesWithDiff(dir.id, dir.localPath, dir.localPath, serverMap)
+  }
+  processQueue()
+}
+
 export function initSyncWatcher() {
   ipcMain.handle('sync:config', (_, config: { token: string; baseUrl: string }) => {
     token = config.token
@@ -174,10 +198,10 @@ export function initSyncWatcher() {
     watchers.forEach(w => w.close())
     watchers = []
     uploadQueue.length = 0
+    clearFullDiffTimer()
+    activeSyncDirs = dirs.filter(d => !!(d.localPath && fs.existsSync(d.localPath)))
 
-    for (const dir of dirs) {
-      if (!dir.localPath || !fs.existsSync(dir.localPath)) continue
-
+    for (const dir of activeSyncDirs) {
       const serverMap = await fetchServerFileList(dir.id)
       queueAllFilesWithDiff(dir.id, dir.localPath, dir.localPath, serverMap)
 
@@ -192,9 +216,15 @@ export function initSyncWatcher() {
     }
 
     processQueue()
+
+    fullDiffTimer = setInterval(() => {
+      void runScheduledFullDiff()
+    }, FULL_DIFF_INTERVAL_MS)
   })
 
   ipcMain.handle('sync:stop', () => {
+    clearFullDiffTimer()
+    activeSyncDirs = []
     watchers.forEach(w => w.close())
     watchers = []
     uploadQueue.length = 0

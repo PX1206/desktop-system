@@ -100,6 +100,9 @@ let debounceRefreshTimer: ReturnType<typeof setTimeout> | undefined
 let pollTimer: ReturnType<typeof setInterval> | undefined
 let removeIpc: (() => void) | undefined
 
+/** 云端目录树 / 列表自动刷新间隔（与手动「刷新」无关） */
+const AUTO_REFRESH_INTERVAL_MS = 3 * 60 * 1000
+
 function fileExt(f: CloudFileItem) {
   if (f.suffix) return f.suffix
   const url = f.url || ''
@@ -300,7 +303,7 @@ onMounted(() => {
     lastRefreshed.value = new Date().toLocaleTimeString()
   }
   removeIpc = window.electronAPI?.onSyncRemoteUpdated?.(() => scheduleDebouncedRefresh())
-  pollTimer = setInterval(() => scheduleDebouncedRefresh(), 18000)
+  pollTimer = setInterval(() => scheduleDebouncedRefresh(), AUTO_REFRESH_INTERVAL_MS)
 })
 
 onUnmounted(() => {

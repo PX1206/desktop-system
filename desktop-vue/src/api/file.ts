@@ -38,6 +38,13 @@ export async function getDirectoryTree() {
   return r.data.data as DirectoryTreeNode[]
 }
 
+/** 删除云端文件记录（管理员可删任意用户文件；普通用户仅能删自己的） */
+export async function deleteFile(code: string) {
+  const r = await request.post(`/file/delete/${encodeURIComponent(code)}`)
+  if (r.data?.code !== 200) throw new Error(r.data?.message || '删除失败')
+  return true as const
+}
+
 export async function getFileList(params: {
   pageIndex?: number
   pageSize?: number

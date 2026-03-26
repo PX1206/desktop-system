@@ -44,6 +44,14 @@
                   rel="noopener"
                   class="download"
                 >下载</a>
+                <button
+                  type="button"
+                  class="btn-delete"
+                  :disabled="deletingCode === f.code"
+                  @click="confirmDelete(f)"
+                >
+                  {{ deletingCode === f.code ? '删除中…' : '删除' }}
+                </button>
               </div>
             </div>
           </li>
@@ -60,7 +68,13 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { getFileList, getDirectoryTree, type FileItem, type DirectoryTreeNode } from '../api/file'
+import {
+  getFileList,
+  getDirectoryTree,
+  deleteFile,
+  type FileItem,
+  type DirectoryTreeNode
+} from '../api/file'
 import { getUserInfo } from '../api/user'
 import DirNode from '../components/DirNode.vue'
 import FilePreview from '../components/FilePreview.vue'
@@ -74,6 +88,7 @@ const loading = ref(false)
 const pageIndex = ref(1)
 const pageSize = 20
 const paging = ref<{ total: number; records: FileItem[] }>({ total: 0, records: [] })
+const deletingCode = ref<string | null>(null)
 
 const totalPages = computed(() =>
   Math.max(1, Math.ceil(paging.value.total / pageSize))
@@ -158,6 +173,23 @@ async function load() {
     paging.value = { total: 0, records: [] }
   } finally {
     loading.value = false
+  }
+}
+
+async function confirmDelete(f: FileItem) {
+  const label = `${f.name}${getExt(f)}`
+  const ok = window.confirm(
+    `确定从云端删除「${label}」？\n仅可删除您本人名下的文件；管理员可删除全部。\n若本地同步目录仍保留该文件，定时同步或修改文件后会再次上传。`
+  )
+  if (!ok) return
+  deletingCode.value = f.code
+  try {
+    await deleteFile(f.code)
+    await Promise.all([load(), loadTree()])
+  } catch (e) {
+    window.alert((e as Error)?.message || '删除失败')
+  } finally {
+    deletingCode.value = null
   }
 }
 
@@ -253,6 +285,23 @@ onMounted(() => {
   font-size: 0.9rem;
 }
 .file-item .download:hover { background: #2563eb; }
+.file-item .btn-delete {
+  padding: 6px 14px;
+  background: transparent;
+  border: 1px solid #b91c1c;
+  border-radius: 6px;
+  color: #f87171;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.file-item .btn-delete:hover:not(:disabled) {
+  background: rgba(185, 28, 28, 0.2);
+  color: #fca5a5;
+}
+.file-item .btn-delete:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 .pagination {
   display: flex;
   align-items: center;
