@@ -81,8 +81,8 @@ onMounted(load)
 <style scoped>
 .page { padding: 0; }
 .card { background: #1e293b; border-radius: 12px; padding: 24px; border: 1px solid #334155; }
-.toolbar { display: flex; gap: 12px; margin-bottom: 16px; }
-.search { padding: 8px 12px; border: 1px solid #334155; border-radius: 6px; background: #0f172a; color: #e2e8f0; width: 200px; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; align-items: center; }
+.search { padding: 8px 12px; border: 1px solid #334155; border-radius: 6px; background: #0f172a; color: #e2e8f0; flex: 1; min-width: 140px; max-width: 320px; }
 .btn { padding: 8px 16px; background: #3b82f6; border: none; border-radius: 6px; color: #fff; cursor: pointer; }
 .table-wrap { overflow-x: auto; }
 .table { width: 100%; border-collapse: collapse; }
@@ -91,4 +91,14 @@ onMounted(load)
 .pagination { display: flex; align-items: center; gap: 16px; margin-top: 16px; }
 .pagination button { padding: 6px 12px; background: #334155; border: none; border-radius: 6px; color: #e2e8f0; cursor: pointer; }
 .pagination button:disabled { opacity: 0.5; cursor: not-allowed; }
+@media (max-width: 768px) {
+  .card { padding: 16px; }
+  .search {
+    flex: 1;
+    min-width: 0;
+    max-width: none;
+    width: auto;
+  }
+  .table th, .table td { padding: 8px; font-size: 0.85rem; }
+}
 </style>

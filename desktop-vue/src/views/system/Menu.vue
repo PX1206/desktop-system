@@ -61,4 +61,19 @@ onMounted(load)
 .title { flex: 1; }
 .type { color: #64748b; font-size: 0.8rem; }
 .tree-children { margin-left: 24px; margin-top: 4px; }
+@media (max-width: 768px) {
+  .card { padding: 16px; }
+  .tree-node-label {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .path {
+    min-width: 0;
+    max-width: 100%;
+    word-break: break-all;
+  }
+  .title { width: 100%; }
+  .tree-children { margin-left: 12px; }
+}
 </style>

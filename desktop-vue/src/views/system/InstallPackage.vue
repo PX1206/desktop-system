@@ -320,4 +320,18 @@ a.linkish {
   opacity: 0.5;
   cursor: not-allowed;
 }
+@media (max-width: 768px) {
+  .card {
+    padding: 16px;
+  }
+  .search {
+    min-width: 0;
+    max-width: none;
+  }
+  .table th,
+  .table td {
+    padding: 8px;
+    font-size: 0.85rem;
+  }
+}
 </style>

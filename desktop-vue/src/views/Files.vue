@@ -320,6 +320,14 @@ onMounted(() => {
 .pagination button:disabled { opacity: 0.5; cursor: not-allowed; }
 @media (max-width: 768px) {
   .files-layout { flex-direction: column; }
-  .dir-tree { width: 100%; }
+  .dir-tree { width: 100%; min-width: 0; }
+  .file-line {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+  .file-item .file-row {
+    width: 100%;
+    flex-basis: 100%;
+  }
 }
 </style>

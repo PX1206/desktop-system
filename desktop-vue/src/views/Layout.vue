@@ -1,5 +1,11 @@
 <template>
   <div class="layout">
+    <div
+      v-show="!sidebarCollapsed && isMobile"
+      class="sidebar-backdrop"
+      aria-hidden="true"
+      @click="sidebarCollapsed = true"
+    />
     <aside class="sidebar" :class="{ collapsed: sidebarCollapsed }">
       <div class="logo">云同步</div>
       <nav class="menu">
@@ -112,7 +118,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { logout, getUserInfo, updateSelfProfile, type UserDetail } from '../api/user'
 import { getUserMenuTree, type MenuItem } from '../api/menu'
@@ -125,6 +131,11 @@ const router = useRouter()
 const route = useRoute()
 const menuTree = ref<MenuItem[]>([])
 const sidebarCollapsed = ref(false)
+const isMobile = ref(false)
+
+function updateIsMobile() {
+  isMobile.value = typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches
+}
 const expandedGroups = ref<Set<number>>(new Set([110]))
 const userInfo = ref<UserDetail>({} as UserDetail)
 const userMenuOpen = ref(false)
@@ -278,14 +289,37 @@ function handleLogout() {
   router.push('/login')
 }
 
+watch(
+  () => [sidebarCollapsed.value, isMobile.value] as const,
+  () => {
+    if (isMobile.value && !sidebarCollapsed.value) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+  }
+)
+
+watch(
+  () => route.path,
+  () => {
+    if (isMobile.value) sidebarCollapsed.value = true
+  }
+)
+
 onMounted(() => {
+  updateIsMobile()
+  if (isMobile.value) sidebarCollapsed.value = true
+  window.addEventListener('resize', updateIsMobile)
   loadMenu()
   loadUserInfo()
   document.addEventListener('click', onDocClick)
 })
 
 onUnmounted(() => {
+  window.removeEventListener('resize', updateIsMobile)
   document.removeEventListener('click', onDocClick)
+  document.body.style.overflow = ''
 })
 </script>
 
@@ -541,8 +575,58 @@ onUnmounted(() => {
   cursor: not-allowed;
 }
 .main { flex: 1; padding: 20px; overflow: auto; }
+.sidebar-backdrop {
+  display: none;
+}
 @media (max-width: 768px) {
-  .sidebar { position: fixed; left: 0; top: 0; bottom: 0; z-index: 100; }
-  .sidebar.collapsed { width: 0; overflow: hidden; }
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(2px);
+  }
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 101;
+    width: min(260px, 86vw) !important;
+    flex-shrink: 0;
+    transition: transform 0.22s ease, box-shadow 0.22s ease;
+    transform: translateX(-100%);
+    box-shadow: none;
+    border-right: 1px solid #334155;
+  }
+  .sidebar.collapsed {
+    transform: translateX(-100%);
+    width: min(260px, 86vw) !important;
+    overflow: visible;
+  }
+  .sidebar:not(.collapsed) {
+    transform: translateX(0);
+    box-shadow: 8px 0 28px rgba(0, 0, 0, 0.35);
+  }
+  .main-wrap {
+    width: 100%;
+    min-width: 0;
+  }
+  .header {
+    padding: 0 12px;
+    gap: 10px;
+  }
+  .header-desktop-dl {
+    display: none;
+  }
+  .title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .main {
+    padding: 12px;
+  }
 }
 </style>

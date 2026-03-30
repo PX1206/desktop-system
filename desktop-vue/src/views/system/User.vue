@@ -602,4 +602,18 @@ onMounted(async () => {
 .btn-ok:disabled {
   opacity: 0.6;
 }
+@media (max-width: 768px) {
+  .card {
+    padding: 16px;
+  }
+  .search {
+    min-width: 0;
+    max-width: none;
+  }
+  .table th,
+  .table td {
+    padding: 8px 6px;
+    font-size: 0.85rem;
+  }
+}
 </style>

@@ -13,9 +13,11 @@ export async function encryptPasswordPlain(plainPassword: string): Promise<strin
   return rsaEncrypt(plain, publicKey)
 }
 
-async function rsaEncrypt(plain: string, publicKeyBase64: string): Promise<string> {
+/** 与后端 RSAUtil：RSA/ECB/OAEPWithSHA-1AndMGF1Padding 一致 */
+async function rsaEncryptSubtle(plain: string, publicKeyBase64: string): Promise<string> {
+  const subtle = globalThis.crypto!.subtle
   const keyData = Uint8Array.from(atob(publicKeyBase64), c => c.charCodeAt(0))
-  const key = await crypto.subtle.importKey(
+  const key = await subtle.importKey(
     'spki',
     keyData,
     { name: 'RSA-OAEP', hash: 'SHA-1' },
@@ -23,12 +25,32 @@ async function rsaEncrypt(plain: string, publicKeyBase64: string): Promise<strin
     ['encrypt']
   )
   const enc = new TextEncoder()
-  const encrypted = await crypto.subtle.encrypt(
+  const encrypted = await subtle.encrypt(
     { name: 'RSA-OAEP' },
     key,
     enc.encode(plain)
   )
   return btoa(String.fromCharCode(...new Uint8Array(encrypted)))
+}
+
+/** 非安全上下文（如 http://192.168.x.x）无 crypto.subtle 时使用，算法与上面一致 */
+async function rsaEncryptForge(plain: string, publicKeyBase64: string): Promise<string> {
+  const forge = (await import('node-forge')).default
+  const der = forge.util.decode64(publicKeyBase64)
+  const asn1 = forge.asn1.fromDer(der)
+  const publicKey = forge.pki.publicKeyFromAsn1(asn1)
+  const encrypted = publicKey.encrypt(forge.util.encodeUtf8(plain), 'RSA-OAEP', {
+    md: forge.md.sha1.create(),
+    mgf1: { md: forge.md.sha1.create() }
+  })
+  return forge.util.encode64(encrypted)
+}
+
+async function rsaEncrypt(plain: string, publicKeyBase64: string): Promise<string> {
+  if (globalThis.crypto?.subtle) {
+    return rsaEncryptSubtle(plain, publicKeyBase64)
+  }
+  return rsaEncryptForge(plain, publicKeyBase64)
 }
 
 export interface UserItem {
