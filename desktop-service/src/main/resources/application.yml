@@ -61,6 +61,7 @@ rocketmq:
   producer:
     group: desktop-group
     send-message-timeout: 6000
+  instance-name: desktop-instance
 
 mybatis-plus:
   configuration:
